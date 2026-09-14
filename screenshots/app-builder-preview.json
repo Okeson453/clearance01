@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Clearance",
+      "hasCanvas": false,
+      "bodyTextLen": 91,
+      "bodyTextHash": "3255f6c2507c75d8eec13c7ea4994f8c2fd3b5130d7f5bffb4a6c4eac7dbe19c",
+      "bodyTextPrefix": "BC.GAME Clearance Sign in Email or username, then password. Emai",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Clearance",
+      "hasCanvas": false,
+      "bodyTextLen": 91,
+      "bodyTextHash": "3255f6c2507c75d8eec13c7ea4994f8c2fd3b5130d7f5bffb4a6c4eac7dbe19c",
+      "bodyTextPrefix": "BC.GAME Clearance Sign in Email or username, then password. Emai",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
