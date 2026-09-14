@@ -1,32 +1,20 @@
-import { n as __exportAll$1 } from "../_runtime.mjs";
+import { r as __exportAll } from "../_runtime.mjs";
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
-import { C as getScriptPreloadAttrs, D as _getRenderedMatches, E as resolveManifestCssLink, I as rootRouteId, L as isNotFound, M as isRedirect, N as isResolvedRedirect, O as executeRewriteInput, P as parseRedirect, T as resolveManifestAssetLink, a as isSsrResponse, c as stripSsrResponseBody, d as RouterProvider, i as disposeSsrResponseDetached, k as invariant, n as bindSsrResponseToRequest, o as normalizeSsrResponse, r as defineHandlerCallback, s as replaceSsrResponse, t as renderRouterToStream, v as require_jsx_runtime, w as getStylesheetHref } from "../_libs/@tanstack/react-router+[...].mjs";
-import { n as createMemoryHistory } from "../_libs/tanstack__history.mjs";
+import { C as getScriptPreloadAttrs, D as _getRenderedMatches, E as resolveManifestCssLink, F as parseRedirect, I as rootRouteId, L as isNotFound, M as isDangerousProtocol, O as executeRewriteInput, P as isRedirect, T as resolveManifestAssetLink, a as isSsrResponse, c as stripSsrResponseBody, d as RouterProvider, i as disposeSsrResponseDetached, k as invariant, n as bindSsrResponseToRequest, o as normalizeSsrResponse, r as defineHandlerCallback, s as replaceSsrResponse, t as renderRouterToStream, v as require_jsx_runtime, w as getStylesheetHref } from "../_libs/@tanstack/react-router+[...].mjs";
+import { n as createServerHistory } from "../_libs/tanstack__history.mjs";
 import { a as getOrigin, c as createSerializationAdapter, d as toCrossJSONAsync, f as toCrossJSONStream, i as getNormalizedURL, l as makeSerovalPlugin, n as mergeHeaders, o as defaultSerovalPlugins, r as attachRouterServerSsrUtils, s as createRawStreamRPCPlugin, t as waitForRequest, u as fromJSON } from "../_libs/@tanstack/router-core+[...].mjs";
-import { a as toResponse, i as setCookie, n as deleteCookie, r as parseCookies, t as H3Event } from "../_libs/h3-v2+rou3.mjs";
+import { n as toResponse, t as H3Event } from "../_libs/h3-v2.mjs";
 import { AsyncLocalStorage } from "node:async_hooks";
 //#region node_modules/.nitro/vite/services/ssr/index.js
-var ssr_exports = /* @__PURE__ */ __exportAll$1({
-	a: () => __exportAll,
+var ssr_exports = /* @__PURE__ */ __exportAll({
 	createServerEntry: () => createServerEntry,
 	default: () => server_default,
-	i: () => getServerFnById,
-	n: () => createServerFn,
-	r: () => TSS_SERVER_FUNCTION,
-	t: () => server_exports
+	n: () => TSS_SERVER_FUNCTION,
+	r: () => getServerFnById,
+	t: () => createServerFn
 });
 require_react();
 var import_jsx_runtime = require_jsx_runtime();
-var __defProp = Object.defineProperty;
-var __exportAll = (all, no_symbols) => {
-	let target = {};
-	for (var name in all) __defProp(target, name, {
-		get: all[name],
-		enumerable: true
-	});
-	if (!no_symbols) __defProp(target, Symbol.toStringTag, { value: "Module" });
-	return target;
-};
 function StartServer(props) {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RouterProvider, { router: props.router });
 }
@@ -86,53 +74,6 @@ function getH3Event() {
 	if (!event) throw new Error(`No StartEvent found in AsyncLocalStorage. Make sure you are using the function within the server runtime.`);
 	return event.h3Event;
 }
-/**
-* Parse the request to get HTTP Cookie header string and return an object of all cookie name-value pairs.
-* @returns Object of cookie name-value pairs
-* ```ts
-* const cookies = getCookies()
-* ```
-*/
-function getCookies() {
-	const cookies = parseCookies(getH3Event());
-	const definedCookies = Object.create(null);
-	for (const [name, value] of Object.entries(cookies)) if (value !== void 0) definedCookies[name] = value;
-	return definedCookies;
-}
-/**
-* Get a cookie value by name.
-* @param name Name of the cookie to get
-* @returns {*} Value of the cookie (String or undefined)
-* ```ts
-* const authorization = getCookie('Authorization')
-* ```
-*/
-function getCookie(name) {
-	return getCookies()[name];
-}
-/**
-* Set a cookie value by name.
-* @param name Name of the cookie to set
-* @param value Value of the cookie to set
-* @param options {CookieSerializeOptions} Options for serializing the cookie
-* ```ts
-* setCookie('Authorization', '1234567')
-* ```
-*/
-function setCookie$1(name, value, options) {
-	setCookie(getH3Event(), name, value, options);
-}
-/**
-* Remove a cookie by name.
-* @param name Name of the cookie to delete
-* @param serializeOptions {CookieSerializeOptions} Cookie options
-* ```ts
-* deleteCookie('SessionId')
-* ```
-*/
-function deleteCookie$1(name, options) {
-	deleteCookie(getH3Event(), name, options);
-}
 function getResponse() {
 	return getH3Event().res;
 }
@@ -147,7 +88,7 @@ var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 * the dev styles URL for route-scoped CSS collection.
 */
 async function getStartManifest(matchedRoutes) {
-	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-BYViztKs.mjs");
+	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-Bj9N1y1U.mjs");
 	const startManifest = tsrStartManifest();
 	let routes = startManifest.routes;
 	routes[rootRouteId];
@@ -169,15 +110,15 @@ async function getStartManifest(matchedRoutes) {
 var manifest = {
 	"49547b6507e79b63869acab7f3d8584ac871878d11a6cfacfd8ff92ffe919282": {
 		functionName: "getSessionFn_createServerFn_handler",
-		importer: () => import("./actions-CPjNOgrq.mjs")
+		importer: () => import("./actions-BYRtu1bC.mjs")
 	},
 	"6a1c721aa39e6983e40ccc46bd75549c214e043102ef9295694d6224ba46cfd0": {
 		functionName: "loginFn_createServerFn_handler",
-		importer: () => import("./actions-CPjNOgrq.mjs")
+		importer: () => import("./actions-BYRtu1bC.mjs")
 	},
 	"a1730feec9138ad665c25a33e8a907c52229849721d0cd17b0ddd8277f2be326": {
 		functionName: "logoutFn_createServerFn_handler",
-		importer: () => import("./actions-CPjNOgrq.mjs")
+		importer: () => import("./actions-BYRtu1bC.mjs")
 	}
 };
 async function getServerFnById(id, access) {
@@ -1447,7 +1388,7 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
 	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-		import("./router-DLc_BfTf.mjs").then((n) => n.t),
+		import("./router-B6KpJYXE.mjs").then((n) => n.t),
 		import("./start-5Z2QO8AU.mjs"),
 		import("./empty-plugin-adapters-D9UWiqvJ.mjs")
 	]);
@@ -1689,7 +1630,7 @@ function createStartHandler(cbOrOptions) {
 				router = await waitForRequest(entries.routerEntry.getRouter(), request.signal);
 				let isShell = IS_SHELL_ENV;
 				if (IS_PRERENDERING && !isShell) isShell = request.headers.get(HEADERS.TSS_SHELL) === "true";
-				const history = createMemoryHistory({ initialEntries: [href] });
+				const history = createServerHistory(href);
 				router.update({
 					history,
 					isShell,
@@ -1724,7 +1665,7 @@ function createStartHandler(cbOrOptions) {
 					handlerType: "serverFn",
 					context: createNullProtoObject(requestOpts?.context)
 				}, request.signal);
-				const result = await handleRedirectResponse(middlewareResponse, request, getRouter, request.signal);
+				const result = await handleRedirectResponse(middlewareResponse, getRouter, request.signal, request.headers.get("x-tsr-serverFn") === "true");
 				bindSsrResponseToRequest(router ?? void 0, result, request.signal);
 				request.signal.throwIfAborted();
 				responseOwnsCleanup = result.serverSsrCleanup === "stream";
@@ -1799,7 +1740,7 @@ function createStartHandler(cbOrOptions) {
 				handlerType: "router",
 				context: createNullProtoObject(requestOpts?.context)
 			}, request.signal);
-			const response = await handleRedirectResponse(middlewareResponse, request, getRouter, request.signal);
+			const response = await handleRedirectResponse(middlewareResponse, getRouter, request.signal, false);
 			bindSsrResponseToRequest(router ?? void 0, response, request.signal);
 			request.signal.throwIfAborted();
 			responseOwnsCleanup = response.serverSsrCleanup === "stream";
@@ -1811,32 +1752,39 @@ function createStartHandler(cbOrOptions) {
 	};
 	return requestHandler(startRequestResolver);
 }
-async function handleRedirectResponse(response, request, getRouter, signal) {
+var relativeRedirectProtocols = /* @__PURE__ */ new Set();
+async function handleRedirectResponse(response, getRouter, signal, serializeRedirect) {
 	signal.throwIfAborted();
 	const ssrResponse = normalizeSsrResponse(response);
 	if (!isRedirect(ssrResponse.response)) return ssrResponse;
-	if (isResolvedRedirect(ssrResponse.response)) {
-		if (request.headers.get("x-tsr-serverFn") === "true") return waitForRequest(replaceSsrResponse(ssrResponse, Response.json({
-			...ssrResponse.response.options,
-			isSerializedRedirect: true
-		}, { headers: ssrResponse.response.headers }), "redirect response replaced"), signal);
-		return ssrResponse;
-	}
 	const opts = ssrResponse.response.options;
-	if (opts.to && typeof opts.to === "string" && !opts.to.startsWith("/")) throw new Error(`Server side redirects must use absolute paths via the 'href' or 'to' options. The redirect() method's "to" property accepts an internal path only. Use the "href" property to provide an external URL. Received: ${JSON.stringify(opts)}`);
-	if ([
+	const href = ssrResponse.response.headers.get("Location") || opts.href;
+	if (!href && opts.to && typeof opts.to === "string" && !opts.to.startsWith("/")) throw new Error(`Server side redirects must use absolute paths via the 'href' or 'to' options. The redirect() method's "to" property accepts an internal path only. Use the "href" property to provide an external URL. Received: ${JSON.stringify(opts)}`);
+	if (!href && [
 		"params",
 		"search",
 		"hash"
 	].some((d) => typeof opts[d] === "function")) throw new Error(`Server side redirects must use static search, params, and hash values and do not support functional values. Received functional values for: ${Object.keys(opts).filter((d) => typeof opts[d] === "function").map((d) => `"${d}"`).join(", ")}`);
 	signal.throwIfAborted();
-	const router = await waitForRequest(getRouter(), signal);
-	signal.throwIfAborted();
-	const redirect = router.resolveRedirect(ssrResponse.response);
-	if (request.headers.get("x-tsr-serverFn") === "true") return waitForRequest(replaceSsrResponse(ssrResponse, Response.json({
-		...ssrResponse.response.options,
-		isSerializedRedirect: true
-	}, { headers: ssrResponse.response.headers }), "redirect response replaced"), signal);
+	let redirect = ssrResponse.response;
+	if (href && !isDangerousProtocol(href, relativeRedirectProtocols)) {
+		redirect.options.href = href;
+		redirect.headers.set("Location", href);
+	} else {
+		const router = await waitForRequest(getRouter(), signal);
+		signal.throwIfAborted();
+		redirect = router.resolveRedirect(redirect);
+	}
+	if (serializeRedirect) {
+		const redirectOptions = { ...redirect.options };
+		delete redirectOptions.headers;
+		const responseHeaders = new Headers(redirect.headers);
+		responseHeaders.set("content-type", "application/json");
+		return waitForRequest(replaceSsrResponse(ssrResponse, Response.json({
+			...redirectOptions,
+			isSerializedRedirect: true
+		}, { headers: responseHeaders }), "redirect response replaced"), signal);
+	}
 	return waitForRequest(replaceSsrResponse(ssrResponse, redirect, "redirect response replaced"), signal);
 }
 async function handleServerRoutes({ getRouter, request, url, executeRouter, context, executedRequestMiddlewares }) {
@@ -1881,15 +1829,10 @@ async function handleServerRoutes({ getRouter, request, url, executeRouter, cont
 	}, request.signal);
 	if (isHeadFallback) {
 		if (!ctx.response) throwRouteHandlerError();
-		return waitForRequest(stripSsrResponseBody(await handleRedirectResponse(response, request, getRouter, request.signal), "HEAD body stripped"), request.signal);
+		return waitForRequest(stripSsrResponseBody(await handleRedirectResponse(response, getRouter, request.signal, false), "HEAD body stripped"), request.signal);
 	}
 	return normalizeSsrResponse(response);
 }
-var server_exports = /* @__PURE__ */ __exportAll({
-	deleteCookie: () => deleteCookie$1,
-	getCookie: () => getCookie,
-	setCookie: () => setCookie$1
-});
 var fetch = createStartHandler(defaultStreamHandler);
 function createServerEntry(entry) {
 	return { async fetch(...args) {
@@ -1898,4 +1841,4 @@ function createServerEntry(entry) {
 }
 var server_default = createServerEntry({ fetch });
 //#endregion
-export { __exportAll as a, createServerEntry, server_default as default, getServerFnById as i, createServerFn as n, ssr_exports as o, TSS_SERVER_FUNCTION as r, server_exports as t };
+export { createServerEntry, server_default as default, ssr_exports as i, TSS_SERVER_FUNCTION as n, getServerFnById as r, createServerFn as t };

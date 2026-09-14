@@ -9,6 +9,10 @@ import {
 import { playwrightAvailable, playwrightLogin } from "./playwright.server";
 import { clearSession, readSession, writeSession } from "./session.server";
 import type { LoginResult, SessionView, StoredSession } from "./types";
+import { initWorker } from "./worker.server";
+
+// Start background worker
+initWorker();
 
 const disconnected: SessionView = { status: "DISCONNECTED", balance: null };
 const LOGIN_BUDGET_MS = 75_000;
@@ -36,9 +40,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-async function persistIfLive(session: StoredSession): Promise<SessionView | null> {
+async function persistIfLive(session: StoredSession, identifier?: string, password?: string): Promise<SessionView | null> {
   const verified = await verifyAndBalance(session);
   if (!verified.ok) return null;
+  if (identifier && password) {
+    session.credentials = { identifier, password };
+  }
   await writeSession(session);
   return connectedView(verified.balance.amount, verified.balance.currency);
 }
@@ -68,7 +75,7 @@ async function loginAttempt(identifier: string, password: string): Promise<Login
     try {
       const result = await httpLogin({ identifier, password, origin });
       if (result.ok) {
-        const view = await persistIfLive(result.session);
+        const view = await persistIfLive(result.session, identifier, password);
         if (view) return view;
         lastMessage = "Could not read balance.";
         continue;
@@ -88,7 +95,7 @@ async function loginAttempt(identifier: string, password: string): Promise<Login
     try {
       const session = await playwrightLogin(identifier, password);
       if (session) {
-        const view = await persistIfLive(session);
+        const view = await persistIfLive(session, identifier, password);
         if (view) return view;
         lastMessage = "Could not read balance.";
       } else {

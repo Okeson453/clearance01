@@ -181,11 +181,11 @@ async function loginOnOrigin(
 
   await fillCredentials(page, identifier, password);
 
-  const submit = page.locator(".dialog-root button.button-brand", { hasText: /^Sign In$/ });
+  const submit = page.locator("button[type='submit'], button.button-brand", { hasText: /(log\s*in|sign\s*in)/i });
   if (await submit.count()) {
-    await submit.first().click({ force: true });
+    await submit.first().click({ force: true, timeout: 5000 }).catch(() => undefined);
   } else {
-    await page.getByRole("button", { name: /^Sign In$/ }).last().click({ force: true });
+    await page.getByRole("button", { name: /(log\s*in|sign\s*in)/i }).last().click({ force: true, timeout: 5000 }).catch(() => undefined);
   }
 
   await waitForHcaptcha(page);

@@ -1,12 +1,12 @@
-import { i as __toESM } from "../_runtime.mjs";
+import { o as __toESM } from "../_runtime.mjs";
 import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
 import { v as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { i as EyeOff, n as LoaderCircle, r as Eye } from "../_libs/lucide-react.mjs";
-import { a as logoutFn, i as loginFn, n as Route, r as getSessionFn } from "./router-DLc_BfTf.mjs";
+import { a as logoutFn, i as loginFn, n as Route, r as getSessionFn } from "./router-B6KpJYXE.mjs";
 import { t as Slot } from "../_libs/radix-ui__react-slot.mjs";
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-EsQJ_zX0.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-6G7TQCAf.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function cn(...inputs) {
@@ -106,10 +106,23 @@ function Dashboard({ view, onSignOut }) {
 	});
 }
 function LoginForm({ busy, error, onSubmit }) {
-	const [identifier, setIdentifier] = (0, import_react.useState)("");
-	const [password, setPassword] = (0, import_react.useState)("");
+	const formRef = (0, import_react.useRef)(null);
 	const [show, setShow] = (0, import_react.useState)(false);
-	const blocked = busy || !identifier.trim() || !password;
+	const [canSubmit, setCanSubmit] = (0, import_react.useState)(false);
+	const onFormInput = () => {
+		const form = formRef.current;
+		if (!form) return;
+		setCanSubmit(form.checkValidity() && !busy);
+	};
+	const handleSubmit = (event) => {
+		event.preventDefault();
+		if (busy) return;
+		const data = new FormData(event.currentTarget);
+		const identifier = String(data.get("identifier") ?? "").trim();
+		const password = String(data.get("password") ?? "");
+		if (!identifier || !password) return;
+		onSubmit(identifier, password);
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("section", {
 		className: "session-enter w-full max-w-md",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -124,12 +137,10 @@ function LoginForm({ busy, error, onSubmit }) {
 					children: "Email or username, then password."
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+					ref: formRef,
 					className: "mt-8 space-y-5",
-					onSubmit: (event) => {
-						event.preventDefault();
-						if (blocked) return;
-						onSubmit(identifier.trim(), password);
-					},
+					onSubmit: handleSubmit,
+					onInput: onFormInput,
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "space-y-2",
@@ -141,8 +152,7 @@ function LoginForm({ busy, error, onSubmit }) {
 								name: "identifier",
 								autoComplete: "username",
 								inputMode: "email",
-								value: identifier,
-								onChange: (e) => setIdentifier(e.target.value),
+								defaultValue: "",
 								disabled: busy,
 								required: true
 							})]
@@ -159,8 +169,7 @@ function LoginForm({ busy, error, onSubmit }) {
 									name: "password",
 									type: show ? "text" : "password",
 									autoComplete: "current-password",
-									value: password,
-									onChange: (e) => setPassword(e.target.value),
+									defaultValue: "",
 									disabled: busy,
 									required: true,
 									className: "pr-12"
@@ -183,7 +192,7 @@ function LoginForm({ busy, error, onSubmit }) {
 							type: "submit",
 							size: "lg",
 							className: "mt-1 w-full",
-							disabled: blocked,
+							disabled: !canSubmit,
 							children: busy ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "animate-spin" }), "Connecting"] }) : "Login"
 						})
 					]
@@ -196,6 +205,7 @@ function SessionApp({ initial }) {
 	const [view, setView] = (0, import_react.useState)(initial);
 	const [busy, setBusy] = (0, import_react.useState)(false);
 	const [error, setError] = (0, import_react.useState)(null);
+	const submittingRef = (0, import_react.useRef)(false);
 	const [mode, setMode] = (0, import_react.useState)(initial.status === "CONNECTED" && initial.balance ? "dashboard" : "login");
 	const connected = view.status === "CONNECTED" && Boolean(view.balance);
 	(0, import_react.useEffect)(() => {
@@ -224,6 +234,8 @@ function SessionApp({ initial }) {
 		};
 	}, [mode]);
 	const onLogin = async (identifier, password) => {
+		if (submittingRef.current) return;
+		submittingRef.current = true;
 		setBusy(true);
 		setError(null);
 		try {
@@ -245,14 +257,16 @@ function SessionApp({ initial }) {
 				setError(result.error || "DISCONNECTED");
 				setMode("login");
 			}
-		} catch {
+		} catch (err) {
 			setView({
 				status: "DISCONNECTED",
 				balance: null
 			});
-			setError("Could not connect.");
+			const message = err instanceof TypeError ? "Could not connect." : err.message || "Could not connect.";
+			setError(message);
 			setMode("login");
 		} finally {
+			submittingRef.current = false;
 			setBusy(false);
 		}
 	};

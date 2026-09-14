@@ -1,7 +1,8 @@
-import { n as jwtDecrypt, t as EncryptJWT } from "../_libs/jose.mjs";
+import { t as wrapper_default } from "../_libs/ws.mjs";
 import { createHash, createHmac } from "node:crypto";
-import { existsSync } from "node:fs";
-//#region node_modules/.nitro/vite/services/ssr/assets/orchestrator.server-DpV6htsM.js
+import { existsSync, promises } from "node:fs";
+import { join } from "node:path";
+//#region node_modules/.nitro/vite/services/ssr/assets/orchestrator.server-I91u8m1B.js
 /** BC.Game login password: HMAC-SHA256(MD5(plain), timestamp). */
 function encryptPassword(plain, timestamp = String(Date.now())) {
 	const md5 = createHash("md5").update(plain, "utf8").digest("hex");
@@ -401,9 +402,15 @@ async function loginOnOrigin(page, origin, identifier, password) {
 	await dismissNoise(page);
 	if (!await page.locator("input[type=\"password\"]").count()) return null;
 	await fillCredentials(page, identifier, password);
-	const submit = page.locator(".dialog-root button.button-brand", { hasText: /^Sign In$/ });
-	if (await submit.count()) await submit.first().click({ force: true });
-	else await page.getByRole("button", { name: /^Sign In$/ }).last().click({ force: true });
+	const submit = page.locator("button[type='submit'], button.button-brand", { hasText: /(log\s*in|sign\s*in)/i });
+	if (await submit.count()) await submit.first().click({
+		force: true,
+		timeout: 5e3
+	}).catch(() => void 0);
+	else await page.getByRole("button", { name: /(log\s*in|sign\s*in)/i }).last().click({
+		force: true,
+		timeout: 5e3
+	}).catch(() => void 0);
 	await waitForHcaptcha(page);
 	await clickHcaptchaCheckbox(page);
 	const token = await readCaptchaToken(page);
@@ -505,79 +512,162 @@ async function playwrightLogin(identifier, password) {
 		}
 	});
 }
-function env(key) {
-	return process.env[key]?.trim() || void 0;
-}
-/**
-* Workspace preview vs deployed app. The deployer writes GROK_PROJECT_ID on
-* every publish; the sandbox preview never has it. Single source of truth for
-* the split — gate audience, gate endpoints and connector-token semantics all
-* key off this predicate.
-*/
-function isWorkspacePreview() {
-	return !env("GROK_PROJECT_ID");
-}
-var COOKIE = "bcg_session";
-var MAX_AGE = 604800;
-function secretKey() {
-	const material = process.env.BETTER_AUTH_SECRET || process.env.GROK_SERVER_KEY || "clearance.bc.session.v1";
-	return createHash("sha256").update(material).digest();
-}
+var SESSION_FILE = join(process.cwd(), ".grok", "bcgame_session.json");
 async function writeSession(session) {
-	const token = await new EncryptJWT({
-		origin: session.origin,
-		userAgent: session.userAgent,
-		cookies: session.cookies,
-		connectedAt: session.connectedAt
-	}).setProtectedHeader({
-		alg: "dir",
-		enc: "A256GCM"
-	}).setIssuedAt().setExpirationTime(`${MAX_AGE}s`).encrypt(secretKey());
-	const { setCookie } = await import("./ssr.mjs").then((n) => n.o).then((n) => n.t);
-	setCookie(COOKIE, token, {
-		path: "/",
-		httpOnly: true,
-		sameSite: "lax",
-		secure: !isWorkspacePreview(),
-		maxAge: MAX_AGE
-	});
+	try {
+		await promises.mkdir(join(process.cwd(), ".grok"), { recursive: true });
+		await promises.writeFile(SESSION_FILE, JSON.stringify(session, null, 2), "utf-8");
+	} catch (err) {
+		console.error("[Session] Failed to write session file", err);
+	}
 }
 async function readSession() {
 	try {
-		const { getCookie } = await import("./ssr.mjs").then((n) => n.o).then((n) => n.t);
-		const token = getCookie(COOKIE);
-		if (!token) return null;
-		const { payload } = await jwtDecrypt(token, secretKey());
-		const origin = typeof payload.origin === "string" ? payload.origin : "";
-		const userAgent = typeof payload.userAgent === "string" ? payload.userAgent : "";
-		const cookies = payload.cookies && typeof payload.cookies === "object" ? payload.cookies : null;
-		const connectedAt = typeof payload.connectedAt === "number" ? payload.connectedAt : Date.now();
-		if (!origin || !cookies) return null;
-		return {
-			origin,
-			userAgent,
-			cookies,
-			connectedAt
-		};
+		const text = await promises.readFile(SESSION_FILE, "utf-8");
+		const payload = JSON.parse(text);
+		if (!payload.origin || !payload.cookies) return null;
+		return payload;
 	} catch {
 		return null;
 	}
 }
 async function clearSession() {
 	try {
-		const { deleteCookie } = await import("./ssr.mjs").then((n) => n.o).then((n) => n.t);
-		deleteCookie(COOKIE, { path: "/" });
-	} catch {
-		const { setCookie } = await import("./ssr.mjs").then((n) => n.o).then((n) => n.t);
-		setCookie(COOKIE, "", {
-			path: "/",
-			httpOnly: true,
-			sameSite: "lax",
-			secure: !isWorkspacePreview(),
-			maxAge: 0
-		});
-	}
+		await promises.unlink(SESSION_FILE);
+	} catch {}
 }
+var POLL_INTERVAL = 15e3;
+var RECONNECT_DELAY_BASE = 2e3;
+var MAX_RECONNECT_DELAY = 6e4;
+var SessionWorker = class {
+	running = false;
+	socket = null;
+	watchdogTimer = null;
+	reconnectAttempts = 0;
+	currentSession = null;
+	async start() {
+		if (this.running) return;
+		this.running = true;
+		console.log("[Worker] Background session worker started.");
+		this.loop();
+	}
+	stop() {
+		this.running = false;
+		this.cleanup();
+		console.log("[Worker] Background session worker stopped.");
+	}
+	cleanup() {
+		if (this.watchdogTimer) clearTimeout(this.watchdogTimer);
+		if (this.socket) {
+			try {
+				this.socket.close();
+			} catch {}
+			this.socket = null;
+		}
+	}
+	async loop() {
+		while (this.running) {
+			try {
+				await this.checkAndMaintain();
+			} catch (err) {
+				console.error("[Worker] Error in loop:", err);
+			}
+			await this.sleep(POLL_INTERVAL);
+		}
+	}
+	async checkAndMaintain() {
+		const session = await readSession();
+		if (!session) {
+			this.cleanup();
+			return;
+		}
+		const verified = await verifyAndBalance(session);
+		if (!verified.ok) {
+			if (verified.network) {
+				console.log("[Worker] Network error, will retry later.");
+				return;
+			}
+			console.log("[Worker] Session expired or invalid:", verified.message);
+			if (session.credentials) {
+				console.log("[Worker] Attempting legitimate session recovery...");
+				const result = await loginWithCredentials(session.credentials.identifier, session.credentials.password);
+				if (result.status === "CONNECTED") console.log("[Worker] Session successfully recovered.");
+				else console.error("[Worker] Session recovery failed:", result.error);
+			} else {
+				console.log("[Worker] No credentials available for recovery. Clearing session.");
+				await clearSession();
+				this.cleanup();
+			}
+			return;
+		}
+		this.currentSession = session;
+		if (!this.socket || this.socket.readyState === wrapper_default.CLOSED) this.connectWebSocket(session);
+	}
+	connectWebSocket(session) {
+		if (!this.running) return;
+		this.cleanup();
+		const wsUrl = session.origin.replace("https://", "wss://").replace("http://", "ws://") + "/socket.io/?EIO=3&transport=websocket";
+		console.log(`[Worker] Connecting to realtime endpoint: ${wsUrl}`);
+		try {
+			this.socket = new wrapper_default(wsUrl, { headers: {
+				"User-Agent": session.userAgent,
+				"Origin": session.origin,
+				"Cookie": cookieHeader(session.cookies)
+			} });
+			this.socket.on("open", () => {
+				console.log("[Worker] Realtime connection established.");
+				this.reconnectAttempts = 0;
+				this.startWatchdog();
+			});
+			this.socket.on("message", (data) => {
+				this.resetWatchdog();
+				const msg = data.toString();
+				if (typeof msg === "string") {
+					if (msg.startsWith("2")) this.socket?.send("3");
+					else if (msg.startsWith("0")) console.log("[Worker] Socket.io connected successfully.");
+				}
+			});
+			this.socket.on("close", (code) => {
+				console.log(`[Worker] Realtime connection closed (Code: ${code}).`);
+				this.handleDisconnect();
+			});
+			this.socket.on("error", (error) => {
+				console.error("[Worker] Realtime connection error:", error);
+			});
+		} catch (err) {
+			console.error("[Worker] Failed to setup WebSocket:", err);
+			this.handleDisconnect();
+		}
+	}
+	handleDisconnect() {
+		this.cleanup();
+		if (!this.running) return;
+		this.reconnectAttempts++;
+		const delay = Math.min(RECONNECT_DELAY_BASE * Math.pow(1.5, this.reconnectAttempts - 1), MAX_RECONNECT_DELAY);
+		console.log(`[Worker] Reconnecting in ${Math.round(delay / 1e3)}s (Attempt ${this.reconnectAttempts})...`);
+		setTimeout(() => {
+			if (this.running) this.checkAndMaintain();
+		}, delay);
+	}
+	startWatchdog() {
+		this.resetWatchdog();
+	}
+	resetWatchdog() {
+		if (this.watchdogTimer) clearTimeout(this.watchdogTimer);
+		this.watchdogTimer = setTimeout(() => {
+			console.log("[Worker] Watchdog timeout: No ping received. Restarting connection.");
+			this.handleDisconnect();
+		}, 45e3);
+	}
+	sleep(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+};
+var sessionWorker = new SessionWorker();
+function initWorker() {
+	sessionWorker.start();
+}
+initWorker();
 var disconnected = {
 	status: "DISCONNECTED",
 	balance: null
@@ -604,9 +694,13 @@ function withTimeout(promise, ms) {
 		});
 	});
 }
-async function persistIfLive(session) {
+async function persistIfLive(session, identifier, password) {
 	const verified = await verifyAndBalance(session);
 	if (!verified.ok) return null;
+	if (identifier && password) session.credentials = {
+		identifier,
+		password
+	};
 	await writeSession(session);
 	return connectedView(verified.balance.amount, verified.balance.currency);
 }
@@ -636,7 +730,7 @@ async function loginAttempt(identifier, password) {
 			origin
 		});
 		if (result.ok) {
-			const view = await persistIfLive(result.session);
+			const view = await persistIfLive(result.session, identifier, password);
 			if (view) return view;
 			lastMessage = "Could not read balance.";
 			continue;
@@ -656,7 +750,7 @@ async function loginAttempt(identifier, password) {
 	if (captchaBlocked && await playwrightAvailable()) try {
 		const session = await playwrightLogin(identifier, password);
 		if (session) {
-			const view = await persistIfLive(session);
+			const view = await persistIfLive(session, identifier, password);
 			if (view) return view;
 			lastMessage = "Could not read balance.";
 		} else lastMessage = "Verification failed. Try again.";

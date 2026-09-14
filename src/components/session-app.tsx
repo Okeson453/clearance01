@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,10 +81,25 @@ function LoginForm({
   error: string | null;
   onSubmit: (identifier: string, password: string) => void;
 }) {
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
   const [show, setShow] = useState(false);
-  const blocked = busy || !identifier.trim() || !password;
+  const [canSubmit, setCanSubmit] = useState(false);
+
+  const onFormInput = () => {
+    const form = formRef.current;
+    if (!form) return;
+    setCanSubmit(form.checkValidity() && !busy);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (busy) return;
+    const data = new FormData(event.currentTarget);
+    const identifier = String(data.get("identifier") ?? "").trim();
+    const password = String(data.get("password") ?? "");
+    if (!identifier || !password) return;
+    onSubmit(identifier, password);
+  };
 
   return (
     <section className="session-enter w-full max-w-md">
@@ -96,12 +111,10 @@ function LoginForm({
           Email or username, then password.
         </p>
         <form
+          ref={formRef}
           className="mt-8 space-y-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (blocked) return;
-            onSubmit(identifier.trim(), password);
-          }}
+          onSubmit={handleSubmit}
+          onInput={onFormInput}
         >
           <div className="space-y-2">
             <Label htmlFor="identifier">Email / Username</Label>
@@ -110,8 +123,7 @@ function LoginForm({
               name="identifier"
               autoComplete="username"
               inputMode="email"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              defaultValue=""
               disabled={busy}
               required
             />
@@ -124,8 +136,7 @@ function LoginForm({
                 name="password"
                 type={show ? "text" : "password"}
                 autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                defaultValue=""
                 disabled={busy}
                 required
                 className="pr-12"
@@ -146,7 +157,7 @@ function LoginForm({
               {error}
             </p>
           ) : null}
-          <Button type="submit" size="lg" className="mt-1 w-full" disabled={blocked}>
+          <Button type="submit" size="lg" className="mt-1 w-full" disabled={!canSubmit}>
             {busy ? (
               <>
                 <LoaderCircle className="animate-spin" />
@@ -166,6 +177,7 @@ export function SessionApp({ initial }: { initial: SessionView }) {
   const [view, setView] = useState<SessionView>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
   const [mode, setMode] = useState<"login" | "dashboard">(
     initial.status === "CONNECTED" && initial.balance ? "dashboard" : "login",
   );
@@ -195,6 +207,8 @@ export function SessionApp({ initial }: { initial: SessionView }) {
   }, [mode]);
 
   const onLogin = async (identifier: string, password: string) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -207,11 +221,13 @@ export function SessionApp({ initial }: { initial: SessionView }) {
         setError(result.error || "DISCONNECTED");
         setMode("login");
       }
-    } catch {
+    } catch (err) {
       setView({ status: "DISCONNECTED", balance: null });
-      setError("Could not connect.");
+      const message = err instanceof TypeError ? "Could not connect." : (err as Error).message || "Could not connect.";
+      setError(message);
       setMode("login");
     } finally {
+      submittingRef.current = false;
       setBusy(false);
     }
   };

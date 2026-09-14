@@ -1,6 +1,6 @@
-import { n as createServerFn, r as TSS_SERVER_FUNCTION } from "./ssr.mjs";
+import { n as TSS_SERVER_FUNCTION, t as createServerFn } from "./ssr.mjs";
 import { i as string, r as object } from "../_libs/zod.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/actions-CPjNOgrq.js
+//#region node_modules/.nitro/vite/services/ssr/assets/actions-BYRtu1bC.js
 var createServerRpc = (serverFnMeta, splitImportFn) => {
 	const url = "/_serverFn/" + serverFnMeta.id;
 	return Object.assign(splitImportFn, {
@@ -19,7 +19,7 @@ var getSessionFn_createServerFn_handler = createServerRpc({
 	filename: "src/lib/bcgame/actions.ts"
 }, (opts) => getSessionFn.__executeServer(opts));
 var getSessionFn = createServerFn({ method: "GET" }).handler(getSessionFn_createServerFn_handler, async () => {
-	const { currentView } = await import("./orchestrator.server-DpV6htsM.mjs");
+	const { currentView } = await import("./orchestrator.server-I91u8m1B.mjs");
 	return currentView();
 });
 var loginFn_createServerFn_handler = createServerRpc({
@@ -28,7 +28,7 @@ var loginFn_createServerFn_handler = createServerRpc({
 	filename: "src/lib/bcgame/actions.ts"
 }, (opts) => loginFn.__executeServer(opts));
 var loginFn = createServerFn({ method: "POST" }).validator(credentials).handler(loginFn_createServerFn_handler, async ({ data }) => {
-	const { loginWithCredentials } = await import("./orchestrator.server-DpV6htsM.mjs");
+	const { loginWithCredentials } = await import("./orchestrator.server-I91u8m1B.mjs");
 	return loginWithCredentials(data.identifier, data.password);
 });
 var logoutFn_createServerFn_handler = createServerRpc({
@@ -37,7 +37,7 @@ var logoutFn_createServerFn_handler = createServerRpc({
 	filename: "src/lib/bcgame/actions.ts"
 }, (opts) => logoutFn.__executeServer(opts));
 var logoutFn = createServerFn({ method: "POST" }).handler(logoutFn_createServerFn_handler, async () => {
-	const { logout } = await import("./orchestrator.server-DpV6htsM.mjs");
+	const { logout } = await import("./orchestrator.server-I91u8m1B.mjs");
 	return logout();
 });
 //#endregion

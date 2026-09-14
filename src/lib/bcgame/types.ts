@@ -26,6 +26,10 @@ export type StoredSession = {
   userAgent: string;
   cookies: CookieJar;
   connectedAt: number;
+  credentials?: {
+    identifier: string;
+    password: string;
+  };
 };
 
 export type AmountRow = {
